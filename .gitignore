@@ -7,3 +7,4 @@ __pycache__/
 .env
 *credentials*.json
 inbox_state.json
+inbox_pending.json
