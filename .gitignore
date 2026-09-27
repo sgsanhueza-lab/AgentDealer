@@ -8,3 +8,4 @@ __pycache__/
 *credentials*.json
 inbox_state.json
 inbox_pending.json
+reply_drafts.json
