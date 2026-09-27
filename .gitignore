@@ -9,3 +9,5 @@ __pycache__/
 inbox_state.json
 inbox_pending.json
 reply_drafts.json
+dealer_brain_backup.py
+brain_test.py
