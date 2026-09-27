@@ -25,14 +25,24 @@ def connect():
         bg, a, b = PALETTES[(i-1)%len(PALETTES)]
         circles = ''.join(f'<circle cx="{(i*47+j*79)%500}" cy="{(i*83+j*53)%500}" r="{25+(i*j)%95}" fill="{a if j%2 else b}" opacity=".48"/>' for j in range(1,9))
         svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><rect width="500" height="500" fill="{bg}"/>{circles}<text x="25" y="470" fill="white" font-family="sans-serif" font-size="19">AGENTDEALER / {i:02d}</text></svg>'
-        con.execute('INSERT OR IGNORE INTO works VALUES (?,?,?,?,?)', (i, f'Señal {i:02d}', 10+(i-1)*10, 'AgentDealer', svg))
+        con.execute('INSERT OR IGNORE INTO works (id,title,price,owner,svg) VALUES (?,?,?,?,?)', (i, f'Señal {i:02d}', 10+(i-1)*10, 'AgentDealer', svg))
     con.commit()
     return con
 
 
 def catalog(con):
     return [dict(r) for r in con.execute('SELECT id,title,price,owner FROM works ORDER BY id')]
+def artwork(con, work_id):
+    row = con.execute('''
+        SELECT id,title,price,owner,creator,edition,image_file,image_url,sha256
+        FROM works
+        WHERE id=?
+    ''', (work_id,)).fetchone()
 
+    if not row:
+        raise ValueError('Obra inexistente')
+
+    return dict(row)
 
 def join(con, name):
     if not name or name == 'AgentDealer' or len(name)>50 or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-' for c in name):
@@ -69,6 +79,7 @@ def main():
     p=argparse.ArgumentParser(description='AgentDealer: mercado experimental de arte con MOLT$ ficticios')
     sub=p.add_subparsers(dest='command',required=True)
     sub.add_parser('catalog'); sub.add_parser('report'); sub.add_parser('status')
+    a = sub.add_parser('artwork'); a.add_argument('work_id', type=int)
     post=sub.add_parser('post-catalog'); post.add_argument('--submolt',default='general')
     j=sub.add_parser('join'); j.add_argument('name')
     b=sub.add_parser('buy'); b.add_argument('buyer'); b.add_argument('work_id',type=int); b.add_argument('--offer',type=int)
@@ -76,6 +87,7 @@ def main():
     args=p.parse_args(); con=connect()
     try:
         if args.command=='catalog': result=catalog(con)
+        elif args.command=='artwork': result=artwork(con,args.work_id)
         elif args.command=='report': result=report(con)
         elif args.command=='status':
             from moltbook import status
